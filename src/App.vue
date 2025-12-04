@@ -75,7 +75,6 @@ const handleLogout = () => {
         </div>
         <nav class="main-nav">
           <router-link to="/dashboard" class="nav-link">仪表盘</router-link>
-          <router-link to="/accidents" class="nav-link">事故列表</router-link>
         </nav>
         <div class="user-section">
           <router-link v-if="currentUser" :to="{ name: 'UserInfo', params: { id: currentUser.id } }" class="global-user-btn">

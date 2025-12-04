@@ -1,176 +1,160 @@
 <template>
   <div class="user-info-container">
-    <div class="header">
-      <div class="nav-controls">
-        <button @click="handleBack" class="back-btn">← 返回仪表盘</button>
-        <h1>个人信息</h1>
-      </div>
-      <div class="user-welcome">
-        <span>欢迎，{{ currentUser?.uname }}！</span>
-        <button @click="handleLogout" class="logout-btn">退出登录</button>
-      </div>
+    <div class="user-header">
+      <h1>个人信息管理</h1>
+      <router-link to="/dashboard" class="back-btn">返回仪表盘</router-link>
     </div>
-    
-    <div class="content">
-      <!-- 加载状态 -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>加载中...</p>
-      </div>
-      
-      <!-- 错误状态 -->
-      <div v-else-if="error" class="error-state">
-        <div class="error-icon">⚠️</div>
-        <h3>加载失败</h3>
-        <p>{{ error }}</p>
-        <button @click="fetchUserInfo" class="retry-btn">重试</button>
-      </div>
-      
-      <!-- 用户信息卡片 -->
-      <div v-else-if="userInfo" class="user-info-card">
-        <div class="card-header">
-          <h2>{{ userInfo.uname }}的个人信息</h2>
-          <button 
-            @click="showEditModal = true" 
-            class="edit-btn"
-            v-if="isCurrentUser"
-          >
-            编辑信息
-          </button>
-        </div>
-        
-        <div class="info-grid">
-          <div class="info-item">
-            <label class="info-label">用户ID:</label>
-            <span class="info-value">{{ userInfo.id }}</span>
-          </div>
-          
-          <div class="info-item">
-            <label class="info-label">用户名:</label>
-            <span class="info-value">{{ userInfo.uname }}</span>
-          </div>
-          
-          <div class="info-item">
-            <label class="info-label">手机号:</label>
-            <span class="info-value">{{ userInfo.phoneNumber }}</span>
-          </div>
-          
-          <div class="info-item">
-            <label class="info-label">邮箱:</label>
-            <span class="info-value">{{ userInfo.email }}</span>
-          </div>
-          
-          <div class="info-item">
-            <label class="info-label">角色:</label>
-            <span class="info-value">{{ getUserRoleName(userInfo.role) }}</span>
-          </div>
-        </div>
-        
-        <!-- 操作按钮区域 -->
-        <div v-if="isCurrentUser" class="action-section">
-          <button @click="showPasswordModal = true" class="change-password-btn">
-            修改密码
-          </button>
-        </div>
-      </div>
-      
-      <!-- 未找到 -->
-      <div v-else class="not-found">
-        <div class="not-found-icon">🔍</div>
-        <h3>用户不存在</h3>
-        <p>找不到指定的用户信息</p>
-        <button @click="handleBack" class="back-btn">返回仪表盘</button>
-      </div>
-    </div>
-    
-    <!-- 编辑信息模态框 -->
-    <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>编辑个人信息</h3>
-          <button @click="showEditModal = false" class="close-btn">×</button>
-        </div>
-        <div class="modal-body">
+
+    <div class="user-content">
+      <!-- 基本信息卡片 -->
+      <div class="info-card">
+        <h2>基本信息</h2>
+        <form @submit.prevent="updateUserInfo" class="user-form">
           <div class="form-group">
-            <label>用户名:</label>
-            <input 
-              v-model="editForm.uname" 
-              type="text" 
-              :disabled="true"
-              placeholder="用户名不可修改"
+            <label for="username">用户名</label>
+            <input
+              id="username"
+              v-model="userForm.username"
+              type="text"
+              class="form-control"
+              placeholder="请输入用户名"
             />
           </div>
+          
           <div class="form-group">
-            <label>手机号:</label>
-            <input 
-              v-model="editForm.phoneNumber" 
-              type="tel" 
-              placeholder="请输入手机号"
+            <label for="email">邮箱地址</label>
+            <input
+              id="email"
+              v-model="userForm.email"
+              type="email"
+              class="form-control"
+              placeholder="请输入邮箱地址"
             />
           </div>
+          
           <div class="form-group">
-            <label>邮箱:</label>
-            <input 
-              v-model="editForm.email" 
-              type="email" 
-              placeholder="请输入邮箱"
+            <label for="phone">手机号码</label>
+            <input
+              id="phone"
+              v-model="userForm.phone"
+              type="tel"
+              class="form-control"
+              placeholder="请输入手机号码"
             />
           </div>
-        </div>
-        <div class="modal-footer">
-          <button @click="showEditModal = false" class="cancel-btn">取消</button>
-          <button 
-            @click="submitEdit" 
-            :disabled="isEditing"
-            class="submit-btn"
-          >
-            {{ isEditing ? '保存中...' : '保存' }}
+          
+          <button type="submit" class="btn btn-primary" :disabled="updating">
+            {{ updating ? '更新中...' : '更新信息' }}
           </button>
-        </div>
+        </form>
       </div>
-    </div>
-    
-    <!-- 修改密码模态框 -->
-    <div v-if="showPasswordModal" class="modal-overlay" @click.self="showPasswordModal = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>修改密码</h3>
-          <button @click="showPasswordModal = false" class="close-btn">×</button>
-        </div>
-        <div class="modal-body">
+
+      <!-- 修改密码卡片 -->
+      <div class="info-card">
+        <h2>修改密码</h2>
+        <form @submit.prevent="updatePassword" class="user-form">
           <div class="form-group">
-            <label>当前密码:</label>
-            <input 
-              v-model="passwordForm.oldPassword" 
-              type="password" 
+            <label for="currentPassword">当前密码</label>
+            <input
+              id="currentPassword"
+              v-model="passwordForm.currentPassword"
+              type="password"
+              class="form-control"
               placeholder="请输入当前密码"
             />
           </div>
+          
           <div class="form-group">
-            <label>新密码:</label>
-            <input 
-              v-model="passwordForm.newPassword" 
-              type="password" 
+            <label for="newPassword">新密码</label>
+            <input
+              id="newPassword"
+              v-model="passwordForm.newPassword"
+              type="password"
+              class="form-control"
               placeholder="请输入新密码"
             />
           </div>
+          
           <div class="form-group">
-            <label>确认新密码:</label>
-            <input 
-              v-model="passwordForm.confirmPassword" 
-              type="password" 
+            <label for="confirmPassword">确认新密码</label>
+            <input
+              id="confirmPassword"
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              class="form-control"
               placeholder="请再次输入新密码"
             />
           </div>
+          
+          <button type="submit" class="btn btn-primary" :disabled="changingPassword">
+            {{ changingPassword ? '修改中...' : '修改密码' }}
+          </button>
+        </form>
+      </div>
+
+      <!-- 操作统计卡片 -->
+      <div class="info-card">
+        <h2>操作统计</h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+              <span class="stat-label">总检测次数</span>
+              <span class="stat-value">{{ userStats.totalDetections }}</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <span class="stat-label">已处理障碍物</span>
+              <span class="stat-value">{{ userStats.resolvedObstacles }}</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-info">
+              <span class="stat-label">高风险处理</span>
+              <span class="stat-value">{{ userStats.highRiskHandled }}</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <span class="stat-label">本月活跃</span>
+              <span class="stat-value">{{ userStats.monthlyActive }} 天</span>
+            </div>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button @click="showPasswordModal = false" class="cancel-btn">取消</button>
-          <button 
-            @click="submitPasswordChange" 
-            :disabled="isChangingPassword"
-            class="submit-btn"
-          >
-            {{ isChangingPassword ? '修改中...' : '修改' }}
+      </div>
+
+      <!-- 账户操作卡片 -->
+      <div class="info-card">
+        <h2>账户操作</h2>
+        <div class="action-buttons">
+          <button class="btn btn-secondary" @click="exportUserData">
+            导出个人数据
+          </button>
+          <button class="btn btn-secondary" @click="showDeleteConfirm = true">
+            注销账户
+          </button>
+          <button class="btn btn-danger" @click="handleLogout">
+            退出登录
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 注销确认对话框 -->
+    <div v-if="showDeleteConfirm" class="modal-overlay">
+      <div class="modal-content">
+        <h3>确认注销账户</h3>
+        <p>此操作将永久删除您的账户和所有相关数据，且无法恢复。请谨慎操作！</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" @click="showDeleteConfirm = false">
+            取消
+          </button>
+          <button class="btn btn-danger" @click="deleteAccount">
+            确认注销
           </button>
         </div>
       </div>
@@ -179,65 +163,152 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, reactive, onMounted, inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { userApi } from '../services/api'
 
-// 路由和响应式数据
-const route = useRoute()
 const router = useRouter()
-const isLoading = ref(true)
-const isEditing = ref(false)
-const isChangingPassword = ref(false)
-const error = ref('')
-const userInfo = ref<any>(null)
-const showEditModal = ref(false)
-const showPasswordModal = ref(false)
+const currentUser = inject('currentUser') as any
 
-// 编辑表单
-const editForm = reactive({
-  uname: '',
-  phoneNumber: '',
-  email: ''
+// 响应式数据
+const updating = ref(false)
+const changingPassword = ref(false)
+const showDeleteConfirm = ref(false)
+
+const userForm = reactive({
+  username: '',
+  email: '',
+  phone: ''
 })
 
-// 密码修改表单
 const passwordForm = reactive({
-  oldPassword: '',
+  currentPassword: '',
   newPassword: '',
   confirmPassword: ''
 })
 
-// 获取用户ID
-const userId = computed(() => {
-  const id = route.params.id
-  return typeof id === 'string' ? parseInt(id, 10) : id
+const userStats = reactive({
+  totalDetections: 156,
+  resolvedObstacles: 89,
+  highRiskHandled: 23,
+  monthlyActive: 15
 })
 
-// 从本地存储获取当前用户信息
-const currentUser = computed(() => {
-  const userStr = localStorage.getItem('user')
-  return userStr ? JSON.parse(userStr) : null
-})
-
-// 判断是否是当前用户
-const isCurrentUser = computed(() => {
-  return currentUser.value && userId.value === currentUser.value.id
-})
-
-// 获取用户角色名称
-const getUserRoleName = (roleId: number): string => {
-  const roleMap: Record<number, string> = {
-    0: '主管理员',
-    1: '管理员',
-    2: '普通用户'
+// 初始化用户数据
+const initUserData = () => {
+  if (currentUser.value) {
+    userForm.username = currentUser.value.uname || currentUser.value.username || ''
+    userForm.email = currentUser.value.email || ''
+    userForm.phone = currentUser.value.phone || ''
   }
-  return roleMap[roleId] || '未知角色'
 }
 
-// 返回仪表盘
-const handleBack = () => {
-  router.push('/dashboard')
+// 更新用户信息
+const updateUserInfo = async () => {
+  if (!userForm.username.trim()) {
+    alert('请输入用户名')
+    return
+  }
+
+  try {
+    updating.value = true
+    // 调用API更新用户信息
+    const result = await userApi.updateUserInfo(userForm)
+    if (result.code === 200) {
+      alert('用户信息更新成功')
+      // 更新全局用户状态
+      if (currentUser.value) {
+        currentUser.value.uname = userForm.username
+        currentUser.value.email = userForm.email
+        currentUser.value.phone = userForm.phone
+        localStorage.setItem('user', JSON.stringify(currentUser.value))
+      }
+    } else {
+      alert('更新失败: ' + result.message)
+    }
+  } catch (error) {
+    alert('更新失败，请稍后重试')
+    console.error('更新用户信息失败:', error)
+  } finally {
+    updating.value = false
+  }
+}
+
+// 修改密码
+const updatePassword = async () => {
+  if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+    alert('请填写所有密码字段')
+    return
+  }
+
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    alert('两次输入的新密码不一致')
+    return
+  }
+
+  if (passwordForm.newPassword.length < 6) {
+    alert('密码长度至少6位')
+    return
+  }
+
+  try {
+    changingPassword.value = true
+    const result = await userApi.updatePassword({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword
+    })
+    if (result.code === 200) {
+      alert('密码修改成功')
+      // 清空密码表单
+      passwordForm.currentPassword = ''
+      passwordForm.newPassword = ''
+      passwordForm.confirmPassword = ''
+    } else {
+      alert('密码修改失败: ' + result.message)
+    }
+  } catch (error) {
+    alert('密码修改失败，请稍后重试')
+    console.error('修改密码失败:', error)
+  } finally {
+    changingPassword.value = false
+  }
+}
+
+// 导出个人数据
+const exportUserData = () => {
+  const data = {
+    userInfo: userForm,
+    statistics: userStats,
+    exportTime: new Date().toISOString()
+  }
+  
+  const dataStr = JSON.stringify(data, null, 2)
+  const dataBlob = new Blob([dataStr], { type: 'application/json' })
+  
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(dataBlob)
+  link.download = `user_data_${new Date().getTime()}.json`
+  link.click()
+  
+  alert('数据导出成功')
+}
+
+// 注销账户
+const deleteAccount = async () => {
+  try {
+    const result = await userApi.deleteAccount()
+    if (result.code === 200) {
+      alert('账户注销成功')
+      handleLogout()
+    } else {
+      alert('账户注销失败: ' + result.message)
+    }
+  } catch (error) {
+    alert('账户注销失败，请稍后重试')
+    console.error('注销账户失败:', error)
+  } finally {
+    showDeleteConfirm.value = false
+  }
 }
 
 // 退出登录
@@ -247,371 +318,181 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-// 获取用户信息
-  const fetchUserInfo = async () => {
-    isLoading.value = true
-    error.value = ''
-    
-    try {
-      // 确保userId是数字类型
-      const numericUserId = Number(userId.value)
-      if (isNaN(numericUserId)) {
-        error.value = '无效的用户ID'
-        return
-      }
-      
-      const response = await userApi.getUserById(numericUserId)
-      const result = response.data
-      
-      if (result.code === 200) {
-        userInfo.value = result.data
-        // 初始化编辑表单
-        Object.assign(editForm, {
-          uname: userInfo.value.uname,
-          phoneNumber: userInfo.value.phoneNumber,
-          email: userInfo.value.email
-        })
-      } else {
-        error.value = result.message || '获取用户信息失败'
-      }
-    } catch (err: any) {
-      console.error('获取用户信息失败:', err)
-      error.value = '获取用户信息失败，请稍后重试'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-// 提交编辑
-const submitEdit = async () => {
-  // 表单验证
-  if (!editForm.phoneNumber) {
-    alert('请输入手机号')
-    return
-  }
-  
-  if (!editForm.email) {
-    alert('请输入邮箱')
-    return
-  }
-  
-  // 手机号格式验证
-  const phoneRegex = /^1[3-9]\d{9}$/
-  if (!phoneRegex.test(editForm.phoneNumber)) {
-    alert('请输入有效的手机号')
-    return
-  }
-  
-  // 邮箱格式验证
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(editForm.email)) {
-    alert('请输入有效的邮箱地址')
-    return
-  }
-  
-  isEditing.value = true
-  try {
-    // 这里可以调用更新用户信息的API
-    // 目前后端文档中没有明确的更新用户信息API，这里模拟成功
-    // const result = await userApi.updateUserInfo(userId.value, editForm)
-    
-    // 模拟成功
-    setTimeout(() => {
-      // 更新本地数据
-      userInfo.value.phoneNumber = editForm.phoneNumber
-      userInfo.value.email = editForm.email
-      showEditModal.value = false
-      alert('信息更新成功')
-      isEditing.value = false
-    }, 500)
-  } catch (err: any) {
-    console.error('更新失败:', err)
-    alert('更新失败: ' + (err || '网络错误'))
-    isEditing.value = false
-  }
-}
-
-// 提交密码修改
-const submitPasswordChange = async () => {
-  // 表单验证
-  if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-    alert('请填写所有密码字段')
-    return
-  }
-  
-  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    alert('两次输入的新密码不一致')
-    return
-  }
-  
-  if (passwordForm.newPassword.length < 6) {
-    alert('新密码长度不能少于6位')
-    return
-  }
-  
-  isChangingPassword.value = true
-  try {
-    // 这里可以调用修改密码的API
-    // 目前后端文档中没有明确的修改密码API，这里模拟成功
-    // const result = await userApi.changePassword(userId.value, passwordForm)
-    
-    // 模拟成功
-    setTimeout(() => {
-      // 重置密码表单
-      Object.assign(passwordForm, {
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      })
-      showPasswordModal.value = false
-      alert('密码修改成功，请重新登录')
-      handleLogout()
-      isChangingPassword.value = false
-    }, 500)
-  } catch (err: any) {
-    console.error('密码修改失败:', err)
-    alert('密码修改失败: ' + (err || '网络错误'))
-    isChangingPassword.value = false
-  }
-}
-
-// 组件挂载时获取数据
+// 组件挂载时初始化数据
 onMounted(() => {
-  fetchUserInfo()
+  initUserData()
 })
 </script>
 
 <style scoped>
 .user-info-container {
-  min-height: 100vh;
-  background-color: #f5f7fa;
-}
-
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1.5rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.nav-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.back-btn {
-  padding: 0.5rem 1rem;
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.back-btn:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: 600;
-}
-
-.user-welcome {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.user-welcome span {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.logout-btn {
-  padding: 0.5rem 1rem;
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-}
-
-.logout-btn:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.content {
-  padding: 2rem;
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
-}
-
-/* 加载状态和错误状态 */
-.loading-state,
-.error-state,
-.not-found {
-  text-align: center;
-  padding: 4rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1.5rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.error-icon,
-.not-found-icon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
-}
-
-.error-state h3,
-.not-found h3 {
-  margin: 0 0 1rem 0;
-  color: #333;
-}
-
-.error-state p,
-.not-found p {
-  margin: 0 0 1.5rem 0;
-  color: #666;
-}
-
-.retry-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #667eea;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s ease;
-}
-
-.retry-btn:hover {
-  background-color: #764ba2;
-}
-
-/* 用户信息卡片 */
-.user-info-card {
-  background: white;
-  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.card-header {
+.user-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 2px solid #e0e0e0;
 }
 
-.card-header h2 {
+.user-header h1 {
+  color: #2a5298;
   margin: 0;
-  color: #333;
-  font-size: 1.5rem;
-  font-weight: 600;
 }
 
-.edit-btn {
-  padding: 0.5rem 1rem;
-  background-color: #667eea;
+.back-btn {
+  padding: 0.75rem 1.5rem;
+  background: #6c757d;
   color: white;
-  border: none;
+  text-decoration: none;
   border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-size: 0.9rem;
+  transition: background-color 0.3s;
 }
 
-.edit-btn:hover {
-  background-color: #764ba2;
+.back-btn:hover {
+  background: #545b62;
 }
 
-/* 信息网格 */
-.info-grid {
+.user-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 2rem;
 }
 
-.info-item {
+.info-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.info-card h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.3rem;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 0.5rem;
+}
+
+.user-form {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.info-label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-value {
-  font-size: 1.1rem;
-  color: #333;
-  font-weight: 500;
-  padding: 0.5rem;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-}
-
-/* 操作区域 */
-.action-section {
-  display: flex;
-  justify-content: flex-start;
   gap: 1rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #eaeaea;
 }
 
-.change-password-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #28a745;
-  color: white;
-  border: none;
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.form-control {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #2a5298;
+  box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.1);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
   border-radius: 8px;
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2a5298;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s;
+  text-align: center;
 }
 
-.change-password-btn:hover {
-  background-color: #218838;
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #2a5298;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1e3c72;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c82333;
 }
 
 /* 模态框样式 */
@@ -621,165 +502,52 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
 }
 
 .modal-content {
   background: white;
+  padding: 2rem;
   border-radius: 12px;
-  width: 90%;
   max-width: 500px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  text-align: center;
 }
 
-.modal-header {
+.modal-content h3 {
+  margin-top: 0;
+  color: #dc3545;
+}
+
+.modal-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #eaeaea;
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: #333;
-  font-size: 1.2rem;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.3s ease;
-}
-
-.close-btn:hover {
-  background-color: #f5f5f5;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #333;
-  font-size: 0.9rem;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-group input:disabled {
-  background-color: #f8f9fa;
-  color: #666;
-  cursor: not-allowed;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
   gap: 1rem;
-  padding: 1.5rem;
-  border-top: 1px solid #eaeaea;
-}
-
-.cancel-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.cancel-btn:hover {
-  background-color: #5a6268;
-}
-
-.submit-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #667eea;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background-color: #764ba2;
-}
-
-.submit-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+  justify-content: center;
+  margin-top: 1.5rem;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .header {
+  .user-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
   
-  .nav-controls {
+  .modal-actions {
     flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-  }
-  
-  .content {
-    padding: 1rem;
-  }
-  
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .info-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .action-section {
-    justify-content: center;
-    flex-wrap: wrap;
   }
 }
 </style>

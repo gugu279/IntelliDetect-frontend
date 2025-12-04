@@ -2,6 +2,7 @@
 #app {
   width: 100%;
   min-height: 100vh;
+  background-color: #f8fafc;
 }
 
 /* 主内容区域 */
@@ -16,11 +17,87 @@
 .page-title {
   font-size: 2rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #1e40af;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* 统计卡片样式 */
+.stats-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #1e40af;
+}
+
+.stats-card.warning {
+  border-left-color: #f59e0b;
+}
+
+.stats-card.danger {
+  border-left-color: #dc2626;
+}
+
+.stats-card.success {
+  border-left-color: #059669;
+}
+
+/* 风险等级标签 */
+.risk-tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.risk-low {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.risk-medium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.risk-high {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* 状态标签 */
+.status-tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-confirmed {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-resolved {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+/* 地图容器 */
+.map-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  height: 400px;
 }
 
 /* 辅助类 */
@@ -65,5 +142,9 @@
   
   .page-title {
     font-size: 1.5rem;
+  }
+  
+  .stats-card {
+    padding: 1rem;
   }
 }

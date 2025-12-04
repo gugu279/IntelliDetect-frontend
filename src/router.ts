@@ -1,15 +1,15 @@
+// router.ts - 删除 ObstacleList 路由
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from './components/Login.vue'
 import Register from './components/Register.vue'
 import Dashboard from './components/Dashboard.vue'
-import AccidentList from './components/AccidentList.vue'
-import AccidentDetail from './components/AccidentDetail.vue'
+import ObstacleDetail from './components/ObstacleDetail.vue'
 import UserInfo from './components/UserInfo.vue'
 
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/dashboard'
   },
   {
     path: '/login',
@@ -28,15 +28,9 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/accidents',
-    name: 'AccidentList',
-    component: AccidentList,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/accidents/:id',
-    name: 'AccidentDetail',
-    component: AccidentDetail,
+    path: '/obstacles/:id',
+    name: 'ObstacleDetail',
+    component: ObstacleDetail,
     props: true,
     meta: { requiresAuth: true }
   },
@@ -54,7 +48,7 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫
+// 路由守卫保持不变
 router.beforeEach((to, _from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const isLoggedIn = localStorage.getItem('token') !== null
