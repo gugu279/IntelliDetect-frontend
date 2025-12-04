@@ -1,5 +1,6 @@
 {
-  "name": "vue-ts",
+  "name": "airport-obstacle-detection",
+  "description": "机场障碍物检测系统前端",
   "private": true,
   "version": "0.0.0",
   "type": "module",

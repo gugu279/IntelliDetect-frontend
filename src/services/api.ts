@@ -1,10 +1,10 @@
 import axios from 'axios'
-import type { ApiResponse, Accident, AccidentStats, PageResponse } from '../types/api'
+import type { ApiResponse, Obstacle, ObstacleStats, PageResponse } from '../types/api'
 
 // 创建axios实例
 const apiClient = axios.create({
   baseURL: 'http://localhost:8080/api/v1',
-  //baseURL: 'http://120.46.139.74:8080/IntelliDetect/api/v1',
+  //baseURL: 'http://120.46.139.74:8080/airport-obstacle/api/v1',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -52,8 +52,9 @@ apiClient.interceptors.response.use(
 )
 
 // 用户相关API
+// 在 userApi 对象中添加以下方法
 export const userApi = {
-  // 用户登录
+  // 现有的登录注册方法...
   login: (data: { uname: string; passwor: string }) => {
     return apiClient.post('/users/login', data)
   },
@@ -76,43 +77,74 @@ export const userApi = {
   // 根据用户名获取用户信息
   getUserByUsername: (username: string) => {
     return apiClient.get(`/users/info/${username}`)
+  },
+
+  // 新增：更新用户信息
+  updateUserInfo: (data: {
+    uname?: string;
+    email?: string;
+    phone_number?: string;
+  }) => {
+    return apiClient.put('/users/update', data)
+  },
+
+  // 新增：修改密码
+  updatePassword: (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    return apiClient.put('/users/updatePassword', data)
+  },
+
+  // 新增：注销账户
+  deleteAccount: () => {
+    return apiClient.delete('/users/delete')
   }
 }
 
-// 事故信息相关API
-export const accidentApi = {
-  // 创建事故信息
-  createAccident: (data: {
-    videoUrl: string;
+// 障碍物检测相关API
+export const obstacleApi = {
+  // 创建障碍物检测记录
+  createObstacle: (data: {
     imageUrl: string;
-    accidentDescription: string;
-    accidentDescriptionText: string;
-    accidentDescriptionTime: string;
-    accidentDescriptionState: string;
-  }): Promise<ApiResponse<Accident>> => {
-    return apiClient.post('/accidents', data)
+    location: string;
+    type: string;
+    height: number;
+    distance: number;
+    riskLevel: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+  }): Promise<ApiResponse<Obstacle>> => {
+    return apiClient.post('/obstacles', data)
   },
   
-  // 更新展示信息
-  updateDisplayInfo: (id: number, displayInfo: string): Promise<ApiResponse<Accident>> => {
-    return apiClient.put(`/accidents/${id}/display`, { displayInfo })
+  // 更新障碍物状态
+  updateObstacleStatus: (id: number, status: string): Promise<ApiResponse<Obstacle>> => {
+    return apiClient.put(`/obstacles/${id}/status`, { status })
   },
   
-  // 获取事故列表（分页）
-  getAccidents: (page: number = 1, size: number = 10): Promise<ApiResponse<PageResponse<Accident>>> => {
-    return apiClient.get('/accidents', {
+  // 获取障碍物列表（分页）
+  getObstacles: (page: number = 1, size: number = 10): Promise<ApiResponse<PageResponse<Obstacle>>> => {
+    return apiClient.get('/obstacles', {
       params: { page, size }
     })
   },
   
-  // 获取事故详情
-  getAccidentById: (id: number): Promise<ApiResponse<Accident>> => {
-    return apiClient.get(`/accidents/${id}`)
+  // 获取障碍物详情
+  getObstacleById: (id: number): Promise<ApiResponse<Obstacle>> => {
+    return apiClient.get(`/obstacles/${id}`)
   },
   
-  // 获取事故统计数据
-  getAccidentStats: (): Promise<ApiResponse<AccidentStats>> => {
-    return apiClient.get('/accidents/stats')
+  // 获取障碍物统计数据
+  getObstacleStats: (): Promise<ApiResponse<ObstacleStats>> => {
+    return apiClient.get('/obstacles/stats')
+  },
+  
+  // 获取高风险障碍物
+  getHighRiskObstacles: (): Promise<ApiResponse<Obstacle[]>> => {
+    return apiClient.get('/obstacles/high-risk')
   }
 }
 

@@ -1,17 +1,12 @@
 <template>
-  <div class="accident-detail-container">
+  <div class="obstacle-detail-container">
     <div class="header">
       <div class="nav-controls">
         <button @click="handleBack" class="back-btn">返回</button>
-        <h1>事故详情</h1>
+        <h1>障碍物详情</h1>
       </div>
       <div class="user-info">
-        <router-link v-if="currentUser" :to="{ name: 'UserInfo', params: { id: currentUser.id } }" class="user-link">
-          <span>欢迎，{{ currentUser?.uname }}！</span>
-        </router-link>
-        <router-link v-if="currentUser" :to="{ name: 'UserInfo', params: { id: currentUser.id } }" class="user-info-btn">
-          <span>个人信息</span>
-        </router-link>
+        <span>欢迎，{{ currentUser?.uname }}！</span>
         <button @click="handleLogout" class="logout-btn">退出登录</button>
       </div>
     </div>
@@ -28,88 +23,143 @@
         <div class="error-icon">⚠️</div>
         <h3>加载失败</h3>
         <p>{{ error }}</p>
-        <button @click="fetchAccidentDetail" class="retry-btn">重试</button>
+        <button @click="fetchObstacleDetail" class="retry-btn">重试</button>
       </div>
       
-      <!-- 事故详情 -->
-      <div v-else-if="accident" class="accident-detail">
+      <!-- 障碍物详情 -->
+      <div v-else-if="obstacle" class="obstacle-detail">
         <!-- 基本信息卡片 -->
         <div class="info-card">
           <div class="card-header">
-            <h2>{{ accident.accidentDescriptionText || '未命名事故' }}</h2>
-            <span :class="['accident-state', accident.accidentDescriptionState]">
-              {{ accident.accidentDescriptionState }}
+            <h2>{{ obstacle.location || '未知位置' }}</h2>
+            <span :class="['risk-tag', `risk-${obstacle.riskLevel}`]">
+              {{ getRiskLevelName(obstacle.riskLevel) }}
             </span>
           </div>
           
-          <div class="accident-media">
+          <div class="obstacle-media">
             <div class="media-content">
               <div class="image-container">
-                <img :src="accident.imageUrl" :alt="accident.accidentDescription" class="accident-image" />
+                <img :src="obstacle.imageUrl" :alt="obstacle.location" class="obstacle-image" />
               </div>
             </div>
           </div>
           
           <div class="detail-info">
             <div class="info-row">
-              <span class="info-label">事故ID:</span>
-              <span class="info-value">{{ accident.id }}</span>
+              <span class="info-label">障碍物ID:</span>
+              <span class="info-value">{{ obstacle.id }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">发生时间:</span>
-              <span class="info-value">{{ formatDate(accident.accidentDescriptionTime) }}</span>
+              <span class="info-label">检测时间:</span>
+              <span class="info-value">{{ formatDate(obstacle.detectionTime) }}</span>
             </div>
-            <div class="info-row" v-if="accident.videoUrl">
-              <span class="info-label">视频文件:</span>
-              <button @click="downloadVideo" class="download-btn">下载视频</button>
+            <div class="info-row">
+              <span class="info-label">类型:</span>
+              <span class="info-value">{{ getObstacleTypeName(obstacle.type) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">高度:</span>
+              <span class="info-value">{{ obstacle.height }} 米</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">距离:</span>
+              <span class="info-value">{{ obstacle.distance }} 米</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">坐标:</span>
+              <span class="info-value">
+                {{ obstacle.coordinates?.latitude?.toFixed(6) }}, {{ obstacle.coordinates?.longitude?.toFixed(6) }}
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">状态:</span>
+              <span :class="['status-tag', `status-${obstacle.status}`]">
+                {{ getStatusName(obstacle.status) }}
+              </span>
             </div>
           </div>
         </div>
         
-        <!-- 详细描述卡片 -->
-        <div class="description-card">
-          <h3>详细描述</h3>
-          <div class="description-content">
-            {{ accident.accidentDescription || '暂无详细描述' }}
+        <!-- 地图位置卡片 -->
+        <div class="map-card" v-if="obstacle.coordinates">
+          <h3>位置地图</h3>
+          <div class="map-placeholder">
+            <div class="map-coordinates">
+              <p>纬度: {{ obstacle.coordinates.latitude?.toFixed(6) }}</p>
+              <p>经度: {{ obstacle.coordinates.longitude?.toFixed(6) }}</p>
+            </div>
+            <div class="map-note">
+              <p>地图集成功能待开发</p>
+              <p>实际项目中可集成百度地图/高德地图API</p>
+            </div>
           </div>
         </div>
-        
-
       </div>
       
       <!-- 未找到 -->
       <div v-else class="not-found">
         <div class="not-found-icon">🔍</div>
-        <h3>事故不存在</h3>
-        <p>找不到指定的事故信息</p>
+        <h3>障碍物不存在</h3>
+        <p>找不到指定的障碍物信息</p>
         <button @click="handleBack" class="back-to-list-btn">返回列表</button>
       </div>
     </div>
-    
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, inject, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { accidentApi } from '../services/api'
+import { obstacleApi } from '../services/api'
 
 // 路由和响应式数据
 const route = useRoute()
 const router = useRouter()
 const isLoading = ref(true)
 const error = ref('')
-const accident = ref<any>(null)
+const obstacle = ref<any>(null)
 
-// 获取事故ID
-const accidentId = computed(() => {
+// 获取障碍物ID
+const obstacleId = computed(() => {
   const id = route.params.id
   return typeof id === 'string' ? parseInt(id, 10) : id
 })
 
 // 注入全局用户状态
 const currentUser = inject<Ref<any>>('currentUser', ref(null))
+
+// 障碍物类型映射
+const getObstacleTypeName = (type: string) => {
+  const typeMap: Record<string, string> = {
+    'building': '建筑',
+    'crane': '起重机',
+    'tree': '树木',
+    'equipment': '设备',
+    'other': '其他'
+  }
+  return typeMap[type] || type
+}
+
+// 风险等级映射
+const getRiskLevelName = (level: string) => {
+  const levelMap: Record<string, string> = {
+    'low': '低风险',
+    'medium': '中风险',
+    'high': '高风险'
+  }
+  return levelMap[level] || level
+}
+
+// 状态映射
+const getStatusName = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'pending': '待处理',
+    'confirmed': '已确认',
+    'resolved': '已解决'
+  }
+  return statusMap[status] || status
+}
 
 // 格式化日期
 const formatDate = (dateString: string) => {
@@ -127,7 +177,7 @@ const formatDate = (dateString: string) => {
 
 // 返回上一页
 const handleBack = () => {
-  router.push('/accidents')
+  router.push('/obstacles')
 }
 
 // 退出登录
@@ -137,10 +187,10 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-// 获取事故详情
-const fetchAccidentDetail = async () => {
-  if (!accidentId.value) {
-    error.value = '无效的事故ID'
+// 获取障碍物详情
+const fetchObstacleDetail = async () => {
+  if (!obstacleId.value) {
+    error.value = '无效的障碍物ID'
     isLoading.value = false
     return
   }
@@ -149,57 +199,40 @@ const fetchAccidentDetail = async () => {
   error.value = ''
   
   try {
-    // 确保accidentId是数字类型
-    const numericAccidentId = Number(accidentId.value)
-    if (isNaN(numericAccidentId)) {
-      error.value = '无效的事故ID'
+    const numericObstacleId = Number(obstacleId.value)
+    if (isNaN(numericObstacleId)) {
+      error.value = '无效的障碍物ID'
       isLoading.value = false
       return
     }
-    const result = await accidentApi.getAccidentById(numericAccidentId)
+    const result = await obstacleApi.getObstacleById(numericObstacleId)
     if (result && result.code === 200) {
-      accident.value = result.data
+      obstacle.value = result.data
     } else {
-      error.value = result?.message || '获取事故详情失败'
+      error.value = result?.message || '获取障碍物详情失败'
     }
   } catch (err: any) {
-    console.error('获取事故详情失败:', err)
+    console.error('获取障碍物详情失败:', err)
     error.value = err?.message || '网络错误，请稍后重试'
   } finally {
     isLoading.value = false
   }
 }
 
-
-
-// 下载视频
-const downloadVideo = () => {
-  if (!accident.value?.videoUrl) return
-  
-  const link = document.createElement('a')
-  link.href = accident.value.videoUrl
-  link.download = `accident-${accident.value.id}.mp4`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
-
-
-
 // 组件挂载时获取数据
 onMounted(() => {
-  fetchAccidentDetail()
+  fetchObstacleDetail()
 })
 </script>
 
 <style scoped>
-.accident-detail-container {
+.obstacle-detail-container {
   min-height: 100vh;
   background-color: #f5f7fa;
 }
 
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
   color: white;
   padding: 1.5rem 2rem;
   display: flex;
@@ -223,9 +256,6 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .back-btn:hover {
@@ -248,36 +278,6 @@ onMounted(() => {
 .user-info span {
   font-size: 1rem;
   font-weight: 500;
-}
-
-.user-link {
-  color: #1976d2;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.3s;
-}
-
-.user-link:hover {
-  color: #1565c0;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.user-info-btn {
-  padding: 8px 16px;
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  text-decoration: none;
-  font-size: 14px;
-  margin: 0 8px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.user-info-btn:hover {
-  background-color: #1565c0;
 }
 
 .logout-btn {
@@ -317,7 +317,7 @@ onMounted(() => {
   width: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #1e40af;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1.5rem;
@@ -349,7 +349,7 @@ onMounted(() => {
 .retry-btn,
 .back-to-list-btn {
   padding: 0.75rem 1.5rem;
-  background-color: #667eea;
+  background-color: #1e40af;
   color: white;
   border: none;
   border-radius: 8px;
@@ -360,19 +360,18 @@ onMounted(() => {
 
 .retry-btn:hover,
 .back-to-list-btn:hover {
-  background-color: #764ba2;
+  background-color: #1e3a8a;
 }
 
-/* 事故详情卡片样式 */
-.accident-detail {
+/* 障碍物详情卡片样式 */
+.obstacle-detail {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
 .info-card,
-.description-card,
-.display-info-card {
+.map-card {
   background: white;
   border-radius: 12px;
   padding: 2rem;
@@ -386,13 +385,9 @@ onMounted(() => {
   margin-bottom: 1.5rem;
 }
 
-.card-header h2,
-.card-header h3 {
+.card-header h2 {
   margin: 0;
   color: #333;
-}
-
-.card-header h2 {
   font-size: 1.6rem;
   font-weight: 700;
   flex: 1;
@@ -400,38 +395,54 @@ onMounted(() => {
 }
 
 .card-header h3 {
+  margin: 0;
+  color: #333;
   font-size: 1.3rem;
   font-weight: 600;
 }
 
-.accident-state {
+.risk-tag,
+.status-tag {
   display: inline-block;
   padding: 0.5rem 1rem;
   border-radius: 25px;
   font-size: 0.9rem;
   font-weight: 600;
-  background-color: #e9ecef;
-  color: #495057;
   white-space: nowrap;
 }
 
-.accident-state[class*="严重"] {
-  background-color: #f8d7da;
-  color: #721c24;
+.risk-low {
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
-.accident-state[class*="已处理"] {
-  background-color: #d4edda;
-  color: #155724;
+.risk-medium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.risk-high {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-confirmed {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-resolved {
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
 /* 媒体展示区域 */
-.accident-media {
-  margin-bottom: 1.5rem;
-}
-
-/* 媒体展示区域 */
-.accident-media {
+.obstacle-media {
   margin-bottom: 1.5rem;
 }
 
@@ -448,7 +459,7 @@ onMounted(() => {
   min-height: 400px;
 }
 
-.accident-image {
+.obstacle-image {
   max-width: 100%;
   max-height: 500px;
   object-fit: contain;
@@ -457,7 +468,7 @@ onMounted(() => {
 /* 详细信息 */
 .detail-info {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
   background-color: #f8f9fa;
   padding: 1.5rem;
@@ -480,53 +491,32 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.download-btn {
-  padding: 0.4rem 1rem;
-  background-color: #667eea;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.3s ease;
-}
-
-.download-btn:hover {
-  background-color: #764ba2;
-}
-
-/* 描述内容 */
-.description-content {
-  line-height: 1.8;
-  color: #444;
-  white-space: pre-wrap;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
+/* 地图卡片 */
+.map-placeholder {
+  height: 300px;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
   border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  max-width: 100%;
-  word-break: break-word;
-  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #0369a1;
+  text-align: center;
 }
 
-/* 事故详情卡片样式增强 */
-.info-card {
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1.5rem;
+.map-coordinates {
   margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  word-break: break-word;
 }
 
-.description-card {
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.map-coordinates p {
+  margin: 0.5rem 0;
+  font-family: monospace;
+  font-size: 1.1rem;
+}
+
+.map-note p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
 }
 
 /* 响应式设计 */
