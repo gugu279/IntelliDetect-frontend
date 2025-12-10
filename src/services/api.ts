@@ -3,7 +3,7 @@ import type { ApiResponse, Obstacle, ObstacleStats, PageResponse } from '../type
 
 // 创建axios实例
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+  baseURL: 'http://localhost:8081/api/v1',
   //baseURL: 'http://120.46.139.74:8080/airport-obstacle/api/v1',
   timeout: 10000,
   headers: {
