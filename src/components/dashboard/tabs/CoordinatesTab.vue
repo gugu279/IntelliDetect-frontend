@@ -18,10 +18,13 @@
         <span class="coord-label">检测时间:</span>
         <span class="coord-value">{{ currentCoordinate.detectionTime }}</span>
       </div>
+<<<<<<< HEAD
       <div class="coord-item">
         <span class="coord-label">障碍物种类:</span>
         <span class="coord-value">{{ currentCoordinate.type === 'stone' ? '石子' : '垃圾' }}</span>
       </div>
+=======
+>>>>>>> fda37771de5b2d8aa1c0c5ff15a1f3f8e96c5f65
     </div>
 
     <h4>图片预览</h4>
@@ -33,6 +36,7 @@
     <div class="form-group">
       <label for="obstacleType">障碍物类型</label>
       <select class="form-control" id="obstacleType" v-model="selectedObstacleType">
+<<<<<<< HEAD
         <option value="stone">石子</option>
         <option value="trash">垃圾</option>
       </select>
@@ -44,6 +48,19 @@
     </button>
 
     <!-- 保留模拟接收数据按钮 -->
+=======
+        <option value="building">建筑</option>
+        <option value="crane">起重机</option>
+        <option value="tree">树木</option>
+        <option value="equipment">设备</option>
+        <option value="other">其他</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary" style="width: 100%;" @click="emit('confirm-mark')">确认标注</button>
+    
+    <!-- 添加模拟事件按钮 - 需要从父组件传递方法 -->
+>>>>>>> fda37771de5b2d8aa1c0c5ff15a1f3f8e96c5f65
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;" v-if="showMockButton">
       <h4>开发测试功能</h4>
       <button 
@@ -70,6 +87,7 @@
       area: string
       detectionTime: string
       image: string
+<<<<<<< HEAD
       type: string
     }
     selectedObstacleType: 'stone' | 'trash'  // 修改类型
@@ -85,6 +103,21 @@
 
   const props = withDefaults(defineProps<Props>(), {
     showMockButton: true
+=======
+    }
+    selectedObstacleType: string
+    showMockButton?: boolean  // 添加新属性控制是否显示模拟按钮
+  }
+
+  interface Emits {
+    (e: 'update:selectedObstacleType', value: string): void
+    (e: 'confirm-mark'): void
+    (e: 'generate-mock'): void  // 添加新事件
+  }
+
+  const props = withDefaults(defineProps<Props>(), {
+    showMockButton: true  // 默认显示模拟按钮
+>>>>>>> fda37771de5b2d8aa1c0c5ff15a1f3f8e96c5f65
   })
   
   const emit = defineEmits<Emits>()
@@ -95,7 +128,13 @@
   })
 </script>
 
+<<<<<<< HEAD
 <style scoped>
+=======
+<!-- 样式部分保持不变 -->
+<style scoped>
+/* 样式代码保持不变 */
+>>>>>>> fda37771de5b2d8aa1c0c5ff15a1f3f8e96c5f65
 .coordinate-card {
   background: #f8f9fa;
   border: 1px solid #e0e0e0;
@@ -174,6 +213,7 @@
   transition: background-color 0.3s;
 }
 
+<<<<<<< HEAD
 .btn-danger {
   background: #dc3545;
   color: white;
@@ -181,6 +221,15 @@
 
 .btn-danger:hover {
   background: #c82333;
+=======
+.btn-primary {
+  background: #2a5298;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1e3c72;
+>>>>>>> fda37771de5b2d8aa1c0c5ff15a1f3f8e96c5f65
 }
 
 .btn-simulate {

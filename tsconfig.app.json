@@ -2,6 +2,7 @@
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+<<<<<<< HEAD
     "types": ["vite/client", "node"],
     
     "target": "ES2020",
@@ -18,13 +19,26 @@
     "noEmit": true,
     "jsx": "preserve",
     
+=======
+    "types": ["vite/client"],
+
+>>>>>>> fda37771de5b2d8aa1c0c5ff15a1f3f8e96c5f65
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+<<<<<<< HEAD
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
   "exclude": ["node_modules", "dist"]
 }
+=======
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+}
+>>>>>>> fda37771de5b2d8aa1c0c5ff15a1f3f8e96c5f65
