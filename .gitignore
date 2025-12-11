@@ -1,3 +1,13 @@
+<<<<<<< HEAD
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.local
+=======
 # Logs
 logs
 *.log
@@ -81,3 +91,4 @@ dist
 # OS
 .DS_Store
 Thumbs.db
+>>>>>>> fda37771de5b2d8aa1c0c5ff15a1f3f8e96c5f65
